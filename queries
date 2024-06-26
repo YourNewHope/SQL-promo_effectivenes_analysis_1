@@ -1,0 +1,176 @@
+-- amount of statuses groups: ‘sent’ and ‘control’
+SELECT status, COUNT(*) AS nr_of_clients FROM email_promo_status
+GROUP BY status
+ORDER BY nr_of_clients;
+
+-- date of first purchase (are the same) 
+SELECT M.status, MIN(T.order_date) AS date_1st_purchase
+FROM transactions T
+JOIN email_promo_status M ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-02-01' AND '2018-02-14'
+GROUP BY M.status
+ORDER BY M.status DESC;
+
+-- number of transactions per status
+SELECT M.status, COUNT(*)/(SELECT COUNT(*) FROM email_promo_status WHERE status = M.status)  AS nr_clients
+FROM transactions T
+JOIN email_promo_status M
+ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-02-01' AND '2018-02-14'
+GROUP BY M.status;
+
+-- number of transactions per status during several time periods
+(SELECT M.status, COUNT(*)/(SELECT COUNT(*) FROM email_promo_status WHERE status = M.status)  AS nr_clients, "Jan 04–Jan 17" AS time_period
+FROM transactions T
+JOIN email_promo_status M
+ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-01-04' AND '2018-01-17'
+GROUP BY M.status)
+UNION ALL
+(SELECT M.status, COUNT(*)/(SELECT COUNT(*) FROM email_promo_status WHERE status = M.status)  AS nr_clients, "Jan 18–Jan 31" AS time_period
+FROM transactions T
+JOIN email_promo_status M
+ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-01-18' AND '2018-01-31'
+GROUP BY M.status)
+UNION ALL
+(SELECT M.status, COUNT(*)/(SELECT COUNT(*) FROM email_promo_status WHERE status = M.status)  AS nr_clients, "Feb 01–Feb 14-promo" AS time_period
+FROM transactions T
+JOIN email_promo_status M
+ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-02-01' AND '2018-02-14'
+GROUP BY M.status)
+UNION ALL
+(SELECT M.status, COUNT(*)/(SELECT COUNT(*) FROM email_promo_status WHERE status = M.status)  AS nr_clients, "Feb 15–Feb 28" AS time_period
+FROM transactions T
+JOIN email_promo_status M
+ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-02-15' AND '2018-02-28'
+GROUP BY M.status)
+UNION ALL
+(SELECT M.status, COUNT(*)/(SELECT COUNT(*) FROM email_promo_status WHERE status = M.status)  AS nr_clients, "Mar 01–Mar 14" AS time_period
+FROM transactions T
+JOIN email_promo_status M
+ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-03-01' AND '2018-03-14'
+GROUP BY M.status)UNION ALL
+(SELECT M.status, COUNT(*)/(SELECT COUNT(*) FROM email_promo_status WHERE status = M.status)  AS nr_clients, "Mar 15–Mar 28" AS time_period
+FROM transactions T
+JOIN email_promo_status M
+ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-03-15' AND '2018-03-28'
+GROUP BY M.status);
+
+-- number of clients with more than one purchase during promo period
+SELECT M.status, COUNT(DISTINCT T.client_id) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = M.status) AS more_1_purchase
+FROM transactions T
+JOIN email_promo_status M ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-02-01' AND '2018-02-14'
+GROUP BY M.status
+HAVING COUNT(T.client_id) > 1;
+
+-- for several time periods (2 weeks each)
+(SELECT "Jan 04–Jan 17" AS time_period, M.status, COUNT(DISTINCT T.client_id) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = M.status) AS more_1_purchase
+FROM transactions T
+JOIN email_promo_status M ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-01-04' AND '2018-01-17' 
+GROUP BY M.status
+HAVING COUNT(T.client_id) > 1)
+UNION ALL
+(SELECT "Jan 18–Jan 31" AS time_period, M.status, COUNT(DISTINCT T.client_id) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = M.status) AS more_1_purchase
+FROM transactions T
+JOIN email_promo_status M ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-01-18' AND '2018-01-31' 
+GROUP BY M.status
+HAVING COUNT(T.client_id) > 1)
+UNION ALL
+(SELECT "Feb 01–Feb 14-promo" AS time_period, M.status, COUNT(DISTINCT T.client_id) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = M.status) AS more_1_purchase
+FROM transactions T
+JOIN email_promo_status M ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-02-01' AND '2018-02-14'
+GROUP BY M.status
+HAVING COUNT(T.client_id) > 1)
+UNION ALL
+(SELECT "Feb 15–Feb 28" AS time_period, M.status, COUNT(DISTINCT T.client_id) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = M.status) AS more_1_purchase
+FROM transactions T
+JOIN email_promo_status M ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-02-15' AND '2018-02-28' 
+GROUP BY M.status
+HAVING COUNT(T.client_id) > 1)
+UNION ALL
+(SELECT "Mar 01–Mar 14" AS time_period, M.status, COUNT(DISTINCT T.client_id) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = M.status) AS more_1_purchase
+FROM transactions T
+JOIN email_promo_status M ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-03-01' AND '2018-03-14' 
+GROUP BY M.status
+HAVING COUNT(T.client_id) > 1)
+UNION ALL
+(SELECT "Mar 05–Mar 28" AS time_period, M.status, COUNT(DISTINCT T.client_id) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = M.status) AS more_1_purchase
+FROM transactions T
+JOIN email_promo_status M ON T.client_id = M.client_id
+WHERE T.order_date BETWEEN '2018-03-15' AND '2018-03-28' 
+GROUP BY M.status
+HAVING COUNT(T.client_id) > 1);
+
+-- conversion
+SELECT M.status, 
+       COUNT(DISTINCT CASE WHEN T.order_date BETWEEN '2018-02-01' AND '2018-02-14' THEN T.client_id END) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = M.status) AS wsp_konwersji
+FROM email_promo_status M
+LEFT JOIN transactions T ON M.client_id = T.client_id
+GROUP BY M.status;
+
+-- retention 
+SELECT M.status,
+       COUNT(DISTINCT CASE WHEN T.order_date BETWEEN '2018-02-01' AND '2018-02-14' THEN T.client_id END) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = M.status) AS retencja
+FROM email_promo_status M
+LEFT JOIN transactions T ON M.client_id = T.client_id
+WHERE T.client_id IN (
+    SELECT DISTINCT client_id
+    FROM transactions
+    WHERE order_date > '2018-02-14'
+)
+GROUP BY M.status;
+
+-- number of new clients thanks to promotion (no purchase before but during and after promotion)
+SELECT COUNT(DISTINCT T.client_id) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = 'Sent') AS new_clients
+FROM transactions T
+WHERE T.order_date BETWEEN '2018-02-01' AND '2018-02-14'
+  AND T.client_id NOT IN (
+      SELECT client_id
+      FROM transactions
+      WHERE order_date < '2018-02-01'
+  )
+  AND T.client_id IN (
+      SELECT client_id
+      FROM transactions
+      WHERE order_date > '2018-02-14'
+  );
+
+-- group comparison
+SELECT "Sent" AS status, COUNT(DISTINCT T.client_id) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = 'Sent') AS new_clients
+FROM transactions T
+WHERE T.order_date BETWEEN '2018-02-01' AND '2018-02-14'
+  AND T.client_id NOT IN (
+      SELECT client_id
+      FROM transactions
+      WHERE order_date < '2018-02-01'
+  )
+  AND T.client_id IN (
+      SELECT client_id
+      FROM transactions
+      WHERE order_date > '2018-02-14'
+  )
+  UNION ALL
+ SELECT "Control" AS status, COUNT(DISTINCT T.client_id) / (SELECT COUNT(DISTINCT client_id) FROM email_promo_status WHERE status = 'Control') AS new_clients
+FROM transactions T
+WHERE T.order_date BETWEEN '2018-02-01' AND '2018-02-14'
+  AND T.client_id NOT IN (
+      SELECT client_id
+      FROM transactions
+      WHERE order_date < '2018-02-01'
+  )
+  AND T.client_id IN (
+      SELECT client_id
+      FROM transactions
+      WHERE order_date > '2018-02-14'
+  ) ;
